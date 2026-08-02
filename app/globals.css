@@ -391,6 +391,14 @@ button {
   opacity: 0.85;
 }
 
+.slot-btn.past {
+  background: #f0f1f3;
+  border-color: #dfe2e6;
+  color: #9aa2ab;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
 /* Status badges */
 .badge {
   display: inline-block;

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import BackLink from "../components/BackLink";
+import { nowInIST } from "../../lib/slots";
 
-const ROOMS = Array.from({ length: 6 }, (_, i) => `Conference Room ${i + 1}`);
+const ROOMS = ["Conference Room 1", "Conference Room 2"];
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().date;
 }
 
 export default function LibraryPage() {
@@ -29,6 +30,9 @@ export default function LibraryPage() {
     setLoading(false);
   }
 
+  const isToday = date === todayStr();
+  const minFromTime = isToday ? nowInIST().time : undefined;
+
   useEffect(() => {
     loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,6 +51,10 @@ export default function LibraryPage() {
         setError("Please fill in every field before booking.");
         return;
       }
+    }
+    if (isToday && form.fromTime < minFromTime) {
+      setError("That time has already passed today. Please choose a later time.");
+      return;
     }
     setSubmitting(true);
     try {
@@ -87,6 +95,7 @@ export default function LibraryPage() {
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
+        {isToday && <p className="hint">Times earlier than now ({minFromTime} IST) are disabled for today.</p>}
 
         <form onSubmit={submitBooking}>
           <h3 className="section-title">Your details</h3>
@@ -100,7 +109,9 @@ export default function LibraryPage() {
                 {ROOMS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </label>
-            <label>From<input type="time" name="fromTime" value={form.fromTime} onChange={updateField} /></label>
+            <label>From
+              <input type="time" name="fromTime" value={form.fromTime} onChange={updateField} min={minFromTime} />
+            </label>
             <label>To<input type="time" name="toTime" value={form.toTime} onChange={updateField} /></label>
             <label className="full-width">
               Purpose

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BackLink from "../components/BackLink";
+import { nowInIST } from "../../lib/slots";
 
 const SLOTS = [
   "08:00-08:30", "08:30-09:00", "09:00-09:30", "09:30-10:00",
@@ -11,7 +12,7 @@ const SLOTS = [
 ];
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().date;
 }
 
 export default function CleaningPage() {
@@ -43,6 +44,14 @@ export default function CleaningPage() {
     bookings.filter((b) => b.status !== "cancelled").map((b) => b.slot)
   );
 
+  const isToday = date === todayStr();
+  const nowHHMM = isToday ? nowInIST().time : null;
+  function isPastSlot(slot) {
+    if (!isToday) return false;
+    const startTime = slot.split("-")[0];
+    return startTime <= nowHHMM;
+  }
+
   function updateField(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
@@ -53,6 +62,11 @@ export default function CleaningPage() {
     setSuccess("");
     if (!selectedSlot) {
       setError("Please select a slot first.");
+      return;
+    }
+    if (isPastSlot(selectedSlot)) {
+      setError("That slot has already passed. Please pick another.");
+      setSelectedSlot(null);
       return;
     }
     for (const key of Object.keys(form)) {
@@ -101,20 +115,22 @@ export default function CleaningPage() {
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
+        {isToday && <p className="hint">Slots earlier than now ({nowHHMM} IST) are greyed out for today.</p>}
 
         <h3 className="section-title">Pick a slot</h3>
         <div className="slot-grid">
           {SLOTS.map((slot) => {
             const isBooked = bookedSlots.has(slot);
+            const isPast = isPastSlot(slot);
             const isSelected = selectedSlot === slot;
             return (
               <button
                 type="button"
                 key={slot}
-                disabled={isBooked}
+                disabled={isBooked || isPast}
                 onClick={() => setSelectedSlot(slot)}
-                className={`slot-btn ${isBooked ? "booked" : "available"} ${isSelected ? "selected" : ""}`}
-                title={isBooked ? "Already blocked by another student" : "Available"}
+                className={`slot-btn ${isBooked ? "booked" : isPast ? "past" : "available"} ${isSelected ? "selected" : ""}`}
+                title={isBooked ? "Already blocked by another student" : isPast ? "This time has already passed" : "Available"}
               >
                 {slot}
               </button>

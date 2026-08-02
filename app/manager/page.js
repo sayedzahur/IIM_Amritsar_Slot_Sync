@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BackLink from "../components/BackLink";
+import { nowInIST } from "../../lib/slots";
 
 // Prototype-only credential. See README.md for how to change this and
 // why this is NOT sufficient security for a real deployment.
@@ -15,7 +16,7 @@ const MODULES = [
 ];
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().date;
 }
 
 function LoginGate({ onLogin }) {

@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import BackLink from "../components/BackLink";
+import { nowInIST } from "../../lib/slots";
 
-const ROOMS = Array.from({ length: 14 }, (_, i) => `Class Room ${i + 1}`);
+const ROOMS = Array.from({ length: 12 }, (_, i) => i + 1)
+  .filter((n) => n !== 8)
+  .map((n) => `Class Room ${n}`);
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().date;
 }
 
 export default function ClassroomPage() {
@@ -29,6 +32,9 @@ export default function ClassroomPage() {
     setLoading(false);
   }
 
+  const isToday = date === todayStr();
+  const minFromTime = isToday ? nowInIST().time : undefined;
+
   useEffect(() => {
     loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,6 +53,10 @@ export default function ClassroomPage() {
         setError("Please fill in every field before booking.");
         return;
       }
+    }
+    if (isToday && form.fromTime < minFromTime) {
+      setError("That time has already passed today. Please choose a later time.");
+      return;
     }
     setSubmitting(true);
     try {
@@ -87,6 +97,7 @@ export default function ClassroomPage() {
           Date
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
+        {isToday && <p className="hint">Times earlier than now ({minFromTime} IST) are disabled for today.</p>}
 
         <form onSubmit={submitBooking}>
           <h3 className="section-title">Your details</h3>
@@ -100,7 +111,9 @@ export default function ClassroomPage() {
                 {ROOMS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </label>
-            <label>From<input type="time" name="fromTime" value={form.fromTime} onChange={updateField} /></label>
+            <label>From
+              <input type="time" name="fromTime" value={form.fromTime} onChange={updateField} min={minFromTime} />
+            </label>
             <label>To<input type="time" name="toTime" value={form.toTime} onChange={updateField} /></label>
             <label className="full-width">
               Purpose

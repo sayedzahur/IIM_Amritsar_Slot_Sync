@@ -31,10 +31,14 @@ this with anyone. This is a client-side check only — fine for a demo,
 
 | Module | Slot type | Conflict rule | Manager action |
 |---|---|---|---|
-| Cleaning | Fixed 30-min slots, 8–12 & 1–4 | Same date + same slot already taken | Mark completed |
+| Cleaning | Fixed 30-min slots, 8–12 & 1–4 | Same date + same slot already taken; today's already-passed slots are greyed out | Mark completed |
 | Laundry | Auto-assigned sequence number | One active (non-completed) registration per Roll No. at a time | Mark completed (frees up the student to register again) |
-| Library | Free-form from/to time, 24x7, Rooms 1–6 | Overlapping time range for the same room + date | Approve / Reject |
-| Classroom | Free-form from/to time, 7PM–6AM, Rooms 1–14 | Overlapping time range for the same room + date, and must fall inside the 7PM–6AM window | Approve / Reject |
+| Library | Free-form from/to time, 24x7, Conference Room 1–2 | Overlapping time range for the same room + date; today's already-passed times are blocked | Approve / Reject (reason required on reject) |
+| Classroom | Free-form from/to time, 24x7, Class Room 1–12 (Room 8 excluded) | Overlapping time range for the same room + date; today's already-passed times are blocked | Approve / Reject (reason required on reject) |
+
+"Today" and "now" are always evaluated in IST (Asia/Kolkata), not the
+server's local timezone — see `nowInIST()` in `lib/slots.js` — so this
+behaves correctly however the hosting platform's clock is configured.
 
 Each CSV file (`data/cleaning.csv`, `laundry.csv`, `library.csv`,
 `classroom.csv`) is the full record set for that module — `id`, all the

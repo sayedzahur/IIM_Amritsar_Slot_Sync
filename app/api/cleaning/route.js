@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readAll, appendRow, updateRow, nextId } from "../../../lib/csvStore";
+import { nowInIST } from "../../../lib/slots";
 
 const NAME = "cleaning";
 const HEADERS = [
@@ -46,6 +47,17 @@ export async function POST(request) {
   }
 
   const rows = readAll(NAME, HEADERS);
+
+  const ist = nowInIST();
+  if (body.date === ist.date) {
+    const slotStart = body.slot.split("-")[0];
+    if (slotStart <= ist.time) {
+      return NextResponse.json(
+        { error: "That slot has already passed today. Please choose a later slot." },
+        { status: 400 }
+      );
+    }
+  }
 
   // Conflict check: same date + same slot, not already booked by someone else
   const conflict = rows.find(

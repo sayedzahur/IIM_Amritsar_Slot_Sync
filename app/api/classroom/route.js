@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { readAll, appendRow, updateRow, nextId } from "../../../lib/csvStore";
-import { rangesOverlap } from "../../../lib/slots";
+import { rangesOverlap, nowInIST } from "../../../lib/slots";
 
 const NAME = "classroom";
+const ROOMS = Array.from({ length: 12 }, (_, i) => i + 1)
+  .filter((n) => n !== 8)
+  .map((n) => `Class Room ${n}`);
 const HEADERS = [
   "id",
   "name",
@@ -46,9 +49,22 @@ export async function POST(request) {
       );
     }
   }
+  if (!ROOMS.includes(body.roomNo)) {
+    return NextResponse.json(
+      { error: `Unknown room: ${body.roomNo}. Valid rooms: ${ROOMS.join(", ")}.` },
+      { status: 400 }
+    );
+  }
   if (body.toTime <= body.fromTime) {
     return NextResponse.json(
       { error: "'To' time must be after 'from' time." },
+      { status: 400 }
+    );
+  }
+  const ist = nowInIST();
+  if (body.date === ist.date && body.fromTime < ist.time) {
+    return NextResponse.json(
+      { error: "That time has already passed today. Please choose a later time." },
       { status: 400 }
     );
   }

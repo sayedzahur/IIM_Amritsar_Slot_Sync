@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import BackLink from "../components/BackLink";
+import { nowInIST } from "../../lib/slots";
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().date;
 }
 
 export default function LaundryPage() {
