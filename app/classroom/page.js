@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackLink from "../components/BackLink";
 
 const ROOMS = Array.from({ length: 14 }, (_, i) => `Class Room ${i + 1}`);
 
@@ -18,11 +19,14 @@ export default function ClassroomPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadBookings() {
+    setLoading(true);
     const res = await fetch(`/api/classroom?date=${date}`);
     const data = await res.json();
     setBookings(data.bookings || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -68,12 +72,13 @@ export default function ClassroomPage() {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="page-header">
         <span className="eyebrow">Academic Block</span>
-        <h1>Classroom Booking (Post Class Hours)</h1>
+        <h1>Classroom Booking</h1>
         <p className="page-sub">
-          Bookable between 7:00 PM and 6:00 AM across Class Rooms 1&ndash;14.
-          Requests outside this window will be rejected automatically.
+          Available 24x7 across Class Rooms 1&ndash;14. Choose your own from/to
+          time &mdash; overlapping requests for the same room will be blocked.
         </p>
       </div>
 
@@ -116,13 +121,15 @@ export default function ClassroomPage() {
 
       <h3 className="section-title">Bookings on {date}</h3>
       <div className="card">
-        {bookings.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">Loading bookings…</div>
+        ) : bookings.length === 0 ? (
           <div className="empty-state">No classroom bookings yet for this date.</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>Room</th><th>Time</th><th>Name</th><th>Roll No.</th><th>Purpose</th><th>Status</th>
+                <th>Room</th><th>Time</th><th>Name</th><th>Roll No.</th><th>Purpose</th><th>Status</th><th>Reason (if rejected)</th>
               </tr>
             </thead>
             <tbody>
@@ -134,6 +141,7 @@ export default function ClassroomPage() {
                   <td>{b.rollNo}</td>
                   <td>{b.purpose}</td>
                   <td><span className={`badge badge-${b.status}`}>{b.status}</span></td>
+                  <td>{b.status === "rejected" ? b.rejectReason : "—"}</td>
                 </tr>
               ))}
             </tbody>

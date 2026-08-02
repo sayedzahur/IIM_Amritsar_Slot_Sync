@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackLink from "../components/BackLink";
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -15,11 +16,14 @@ export default function LaundryPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadBookings() {
+    setLoading(true);
     const res = await fetch(`/api/laundry?date=${date}`);
     const data = await res.json();
     setBookings(data.bookings || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -65,6 +69,7 @@ export default function LaundryPage() {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="page-header">
         <span className="eyebrow">Hostel Services</span>
         <h1>Laundry Sequence Registration</h1>
@@ -104,7 +109,9 @@ export default function LaundryPage() {
 
       <h3 className="section-title">Queue for {date}</h3>
       <div className="card">
-        {bookings.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">Loading queue…</div>
+        ) : bookings.length === 0 ? (
           <div className="empty-state">No one has registered for this date yet.</div>
         ) : (
           <table>

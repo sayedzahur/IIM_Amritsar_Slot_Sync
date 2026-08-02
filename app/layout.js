@@ -1,4 +1,5 @@
 import "./globals.css";
+import NavLinks from "./components/NavLinks";
 
 export const metadata = {
   title: "IIM Amritsar Campus Portal",
@@ -17,13 +18,7 @@ export default function RootLayout({ children }) {
               <span className="brand-english">Campus Services Portal</span>
             </span>
           </a>
-          <nav className="site-nav">
-            <a href="/cleaning">Cleaning</a>
-            <a href="/laundry">Laundry</a>
-            <a href="/library">Conference Room</a>
-            <a href="/classroom">Classroom</a>
-            <a href="/manager" className="nav-manager">Manager Login</a>
-          </nav>
+          <NavLinks />
         </header>
         <main>{children}</main>
         <footer className="site-footer">

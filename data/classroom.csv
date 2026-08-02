@@ -1,1 +1,1 @@
-id,name,rollNo,contact,roomNo,date,fromTime,toTime,purpose,status,bookedAt
+id,name,rollNo,contact,roomNo,date,fromTime,toTime,purpose,status,rejectReason,bookedAt

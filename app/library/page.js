@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackLink from "../components/BackLink";
 
 const ROOMS = Array.from({ length: 6 }, (_, i) => `Conference Room ${i + 1}`);
 
@@ -18,11 +19,14 @@ export default function LibraryPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadBookings() {
+    setLoading(true);
     const res = await fetch(`/api/library?date=${date}`);
     const data = await res.json();
     setBookings(data.bookings || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -68,6 +72,7 @@ export default function LibraryPage() {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="page-header">
         <span className="eyebrow">Library Services</span>
         <h1>Conference Room Booking</h1>
@@ -116,13 +121,15 @@ export default function LibraryPage() {
 
       <h3 className="section-title">Bookings on {date}</h3>
       <div className="card">
-        {bookings.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">Loading bookings…</div>
+        ) : bookings.length === 0 ? (
           <div className="empty-state">No conference room bookings yet for this date.</div>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>Room</th><th>Time</th><th>Name</th><th>Roll No.</th><th>Purpose</th><th>Status</th>
+                <th>Room</th><th>Time</th><th>Name</th><th>Roll No.</th><th>Purpose</th><th>Status</th><th>Reason (if rejected)</th>
               </tr>
             </thead>
             <tbody>
@@ -134,6 +141,7 @@ export default function LibraryPage() {
                   <td>{b.rollNo}</td>
                   <td>{b.purpose}</td>
                   <td><span className={`badge badge-${b.status}`}>{b.status}</span></td>
+                  <td>{b.status === "rejected" ? b.rejectReason : "—"}</td>
                 </tr>
               ))}
             </tbody>

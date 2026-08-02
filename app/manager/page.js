@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackLink from "../components/BackLink";
 
 // Prototype-only credential. See README.md for how to change this and
 // why this is NOT sufficient security for a real deployment.
@@ -33,6 +34,7 @@ function LoginGate({ onLogin }) {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="login-shell card">
         <span className="eyebrow">Staff Access</span>
         <h1>Manager Login</h1>
@@ -57,35 +59,74 @@ function LoginGate({ onLogin }) {
 
 function ModuleTable({ mod, date }) {
   const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [reasonDraft, setReasonDraft] = useState("");
+  const [reasonError, setReasonError] = useState("");
 
   async function load() {
+    setLoading(true);
     const res = await fetch(`/api/${mod.key}?date=${date}`);
     const data = await res.json();
     setRows(data.bookings || []);
+    setLoading(false);
   }
 
   useEffect(() => {
     load();
+    setRejectingId(null);
+    setReasonDraft("");
+    setReasonError("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, mod.key]);
 
-  async function act(id, action) {
+  async function act(id, action, reason) {
     setBusyId(id);
     try {
-      await fetch(`/api/${mod.key}`, {
+      const res = await fetch(`/api/${mod.key}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ id, action, reason }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        setReasonError(data.error || "Something went wrong.");
+        return;
+      }
+      setRejectingId(null);
+      setReasonDraft("");
+      setReasonError("");
       await load();
     } finally {
       setBusyId(null);
     }
   }
 
+  function startReject(id) {
+    setRejectingId(id);
+    setReasonDraft("");
+    setReasonError("");
+  }
+
+  function confirmReject(id) {
+    if (!reasonDraft.trim()) {
+      setReasonError("Please enter a reason — it's required for rejections.");
+      return;
+    }
+    act(id, "reject", reasonDraft.trim());
+  }
+
   const isSlotBased = mod.key === "cleaning";
   const isSequenceBased = mod.key === "laundry";
+
+  if (loading) {
+    return (
+      <div className="card">
+        <div className="loading-state">Loading…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -116,9 +157,42 @@ function ModuleTable({ mod, date }) {
                 <td>{r.rollNo}</td>
                 <td>{r.contact}</td>
                 {!isSlotBased && !isSequenceBased && <td>{r.purpose}</td>}
-                <td><span className={`badge badge-${r.status}`}>{r.status}</span></td>
                 <td>
-                  {r.status === "pending" ? (
+                  <span className={`badge badge-${r.status}`}>{r.status}</span>
+                  {r.status === "rejected" && r.rejectReason && (
+                    <span className="reason-note">Reason: {r.rejectReason}</span>
+                  )}
+                </td>
+                <td>
+                  {r.status !== "pending" ? (
+                    <span className="hint">No action</span>
+                  ) : rejectingId === r.id ? (
+                    <div className="reject-form">
+                      <textarea
+                        rows={2}
+                        placeholder="Reason for rejection (required)"
+                        value={reasonDraft}
+                        onChange={(e) => setReasonDraft(e.target.value)}
+                      />
+                      {reasonError && <span className="reason-note">{reasonError}</span>}
+                      <div className="reject-form-actions">
+                        <button
+                          className="btn btn-red btn-sm"
+                          disabled={busyId === r.id}
+                          onClick={() => confirmReject(r.id)}
+                        >
+                          Confirm Reject
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          disabled={busyId === r.id}
+                          onClick={() => setRejectingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
                     <div style={{ display: "flex", gap: "0.4rem" }}>
                       <button
                         className="btn btn-green btn-sm"
@@ -131,14 +205,12 @@ function ModuleTable({ mod, date }) {
                         <button
                           className="btn btn-red btn-sm"
                           disabled={busyId === r.id}
-                          onClick={() => act(r.id, "reject")}
+                          onClick={() => startReject(r.id)}
                         >
                           Reject
                         </button>
                       )}
                     </div>
-                  ) : (
-                    <span className="hint">No action</span>
                   )}
                 </td>
               </tr>
@@ -168,6 +240,7 @@ export default function ManagerPage() {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="page-header">
         <span className="eyebrow">Staff Access</span>
         <h1>Manager Dashboard</h1>

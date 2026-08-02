@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BackLink from "../components/BackLink";
 
 const SLOTS = [
   "08:00-08:30", "08:30-09:00", "09:00-09:30", "09:30-10:00",
@@ -23,11 +24,14 @@ export default function CleaningPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadBookings() {
+    setLoading(true);
     const res = await fetch(`/api/cleaning?date=${date}`);
     const data = await res.json();
     setBookings(data.bookings || []);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -82,6 +86,7 @@ export default function CleaningPage() {
 
   return (
     <div className="page">
+      <BackLink />
       <div className="page-header">
         <span className="eyebrow">Hostel Services</span>
         <h1>Cleaning Staff Slot Booking</h1>
@@ -141,7 +146,9 @@ export default function CleaningPage() {
 
       <h3 className="section-title">Bookings on {date}</h3>
       <div className="card">
-        {bookings.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">Loading bookings…</div>
+        ) : bookings.length === 0 ? (
           <div className="empty-state">No bookings yet for this date.</div>
         ) : (
           <table>

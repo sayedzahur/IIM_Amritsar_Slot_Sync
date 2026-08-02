@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readAll, appendRow, updateRow, nextId } from "../../../lib/csvStore";
-import { rangesOverlap, isWithinClassroomWindow } from "../../../lib/slots";
+import { rangesOverlap } from "../../../lib/slots";
 
 const NAME = "classroom";
 const HEADERS = [
@@ -14,6 +14,7 @@ const HEADERS = [
   "toTime",
   "purpose",
   "status",
+  "rejectReason",
   "bookedAt",
 ];
 
@@ -45,12 +46,9 @@ export async function POST(request) {
       );
     }
   }
-  if (!isWithinClassroomWindow(body.fromTime, body.toTime)) {
+  if (body.toTime <= body.fromTime) {
     return NextResponse.json(
-      {
-        error:
-          "Classrooms can only be booked post class hours, between 7:00 PM and 6:00 AM.",
-      },
+      { error: "'To' time must be after 'from' time." },
       { status: 400 }
     );
   }
@@ -98,12 +96,24 @@ export async function PATCH(request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
   let status = body.status;
+  let rejectReason = "";
   if (body.action === "approve") status = "approved";
-  if (body.action === "reject") status = "rejected";
+  if (body.action === "reject") {
+    status = "rejected";
+    if (!body.reason || !body.reason.trim()) {
+      return NextResponse.json(
+        { error: "A reason is required to reject a booking." },
+        { status: 400 }
+      );
+    }
+    rejectReason = body.reason.trim();
+  }
   if (!status) {
     return NextResponse.json({ error: "Missing action/status" }, { status: 400 });
   }
-  const updated = updateRow(NAME, HEADERS, body.id, { status });
+  const updates = { status };
+  if (status === "rejected") updates.rejectReason = rejectReason;
+  const updated = updateRow(NAME, HEADERS, body.id, updates);
   if (!updated) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }

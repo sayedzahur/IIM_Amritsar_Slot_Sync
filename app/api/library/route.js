@@ -14,6 +14,7 @@ const HEADERS = [
   "toTime",
   "purpose",
   "status",
+  "rejectReason",
   "bookedAt",
 ];
 
@@ -95,12 +96,24 @@ export async function PATCH(request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
   let status = body.status;
+  let rejectReason = "";
   if (body.action === "approve") status = "approved";
-  if (body.action === "reject") status = "rejected";
+  if (body.action === "reject") {
+    status = "rejected";
+    if (!body.reason || !body.reason.trim()) {
+      return NextResponse.json(
+        { error: "A reason is required to reject a booking." },
+        { status: 400 }
+      );
+    }
+    rejectReason = body.reason.trim();
+  }
   if (!status) {
     return NextResponse.json({ error: "Missing action/status" }, { status: 400 });
   }
-  const updated = updateRow(NAME, HEADERS, body.id, { status });
+  const updates = { status };
+  if (status === "rejected") updates.rejectReason = rejectReason;
+  const updated = updateRow(NAME, HEADERS, body.id, updates);
   if (!updated) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
